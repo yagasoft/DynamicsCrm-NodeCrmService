@@ -1,5 +1,7 @@
 # DynamicsCrm-NodeCrmService
 
+[![Join the chat at https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService](https://badges.gitter.im/yagasoft/DynamicsCrm-NodeCrmService.svg)](https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### Version: 1.1.2
 ---
 
