@@ -3,7 +3,7 @@ import CrmConnectionConfig from "./abstract/crm-connection-config.model";
 
 export default class CrmO365ConnectionConfig extends CrmConnectionConfig
 {
-	readonly crmConnectionType: CrmConnectionType = CrmConnectionType.Office365;
+	readonly crmConnectionType?: CrmConnectionType = CrmConnectionType.Office365;
 
 	webApiHost: string;
 	tenant: string;

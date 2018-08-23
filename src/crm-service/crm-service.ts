@@ -2,11 +2,9 @@ import CrmConnectionConfig from "./models/connection-config/abstract/crm-connect
 import CrmO365ConnectionConfig from "./models/connection-config/crm-o365-connection-config.model";
 import CrmAdConnectionConfig from "./models/connection-config/crm-ad-connection-config.model";
 import { CrmConnectionType } from "./models/constants/crm-connection-type.enum";
-import ICrmService from "./abstract/crm-service.interface";
+import ICrmService, { httpMethod } from "./abstract/crm-service.interface";
 import * as https from 'https';
 import * as httpntlm from 'httpntlm';
-
-type httpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 export default class CrmService implements ICrmService
 {
@@ -57,9 +55,9 @@ export default class CrmService implements ICrmService
 	}
 
 	testConnection = (): Promise<string> =>
-		this.makeRequest("get", "/api/data/v8.2/WhoAmI()").then(r => r.UserId);
+		this.get("/api/data/v8.2/WhoAmI()", null, true).then(r => r.UserId);
 
-	makeRequest = (method: httpMethod, urlPath: string, extraHeaders?: Map<string, string>): Promise<any> =>
+	request = (method: httpMethod, urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
 		new Promise<any>(
 			(resolve, reject) =>
 			{
@@ -89,7 +87,7 @@ export default class CrmService implements ICrmService
 						https.request(
 							{
 								host: this.onlineConfig.webApiHost,
-								path: urlPath,
+								path: `${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
 								method,
 								headers
 							},
@@ -128,7 +126,7 @@ export default class CrmService implements ICrmService
 					case CrmConnectionType.AD:
 						httpntlm[method](
 							{
-								url: `${this.config.baseUrl}${urlPath}`,
+								url: `${this.config.baseUrl}${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
 								username: this.config.username,
 								password: this.config.password,
 								workstation: '',
@@ -169,6 +167,21 @@ export default class CrmService implements ICrmService
 						throw new Error(`CRM connection '${this.config.crmConnectionType}' is of an unsupported type.`);
 				}
 			});
+
+	get = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("get", urlPath, extraHeaders, isIgnoreSuffix);
+
+	post = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("post", urlPath, extraHeaders, isIgnoreSuffix);
+	
+	put = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("put", urlPath, extraHeaders, isIgnoreSuffix);
+
+	patch = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("patch", urlPath, extraHeaders, isIgnoreSuffix);
+
+	delete = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("delete", urlPath, extraHeaders, isIgnoreSuffix);
 
 	private authenticateWithAzureAd = (): Promise<string> => this.getAzureAdTokenUrl().then(this.getO365Token);
 

@@ -528,3 +528,4 @@ Microsoft.Office.Interop.Visio.dll
 
 # Project specific
 test/model-builder.test.ts
+test/test-parameters.ts

@@ -3,7 +3,7 @@ import CrmConnectionConfig from "./abstract/crm-connection-config.model";
 
 export default class CrmAdConnectionConfig extends CrmConnectionConfig
 {
-	readonly crmConnectionType: CrmConnectionType = CrmConnectionType.AD;
+	readonly crmConnectionType?: CrmConnectionType = CrmConnectionType.AD;
 	domain: string;
 
 	constructor(obj: CrmAdConnectionConfig)
