@@ -1,12 +1,12 @@
 import CrmConnectionConfig from "./models/connection-config/abstract/crm-connection-config.model";
-import CrmO365ConnectionConfig from "./models/connection-config/crm-o365-connection-config.model";
-import CrmAdConnectionConfig from "./models/connection-config/crm-ad-connection-config.model";
+import { CrmO365ConnectionConfig } from "./models/connection-config/crm-o365-connection-config.model";
+import { CrmAdConnectionConfig } from "./models/connection-config/crm-ad-connection-config.model";
 import { CrmConnectionType } from "./models/constants/crm-connection-type.enum";
 import ICrmService, { httpMethod } from "./abstract/crm-service.interface";
 import * as https from 'https';
 import * as httpntlm from 'httpntlm';
 
-export default class CrmService implements ICrmService
+export class CrmService implements ICrmService
 {
 	public get cachedToken(): string
 	{
@@ -109,7 +109,7 @@ export default class CrmService implements ICrmService
 										try
 										{
 											const parsed = JSON.parse(response);
-											
+
 											if (parsed.error)
 											{
 												reject(parsed);
@@ -178,7 +178,7 @@ export default class CrmService implements ICrmService
 
 	post = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
 		this.request("post", urlPath, extraHeaders, isIgnoreSuffix);
-	
+
 	put = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
 		this.request("put", urlPath, extraHeaders, isIgnoreSuffix);
 

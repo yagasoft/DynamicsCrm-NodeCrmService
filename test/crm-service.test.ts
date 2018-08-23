@@ -1,6 +1,4 @@
-import CrmService from "../src/crm-service/crm-service";
-import CrmO365ConnectionConfig from "../src/crm-service/models/connection-config/crm-o365-connection-config.model";
-import CrmAdConnectionConfig from "../src/crm-service/models/connection-config/crm-ad-connection-config.model";
+import { CrmService, CrmAdConnectionConfig, CrmO365ConnectionConfig } from "../dist/index";
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import TestParameters from "./test-parameters";

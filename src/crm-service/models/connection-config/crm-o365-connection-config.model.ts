@@ -1,7 +1,7 @@
 import { CrmConnectionType } from "../constants/crm-connection-type.enum";
 import CrmConnectionConfig from "./abstract/crm-connection-config.model";
 
-export default class CrmO365ConnectionConfig extends CrmConnectionConfig
+export class CrmO365ConnectionConfig extends CrmConnectionConfig
 {
 	readonly crmConnectionType?: CrmConnectionType = CrmConnectionType.Office365;
 
