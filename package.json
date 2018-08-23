@@ -17,6 +17,25 @@
 		}
 	],
 	"license": "GPL-3.0",
+	"keywords": [
+		"node",
+		"dynamics",
+		"crm",
+		"365",
+		"microsoft",
+		"yagasoft",
+		"service",
+		"organization",
+		"connect",
+		"online",
+		"azure",
+		"ad",
+		"active",
+		"directory",
+		"ntlm",
+		"windows",
+		"authentication"
+	],
 	"bugs": {
 		"url": "https://github.com/yagasoft/DynamicsCrm-NodeCrmService/issues"
 	},

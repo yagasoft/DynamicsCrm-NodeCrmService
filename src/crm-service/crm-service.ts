@@ -8,11 +8,16 @@ import * as httpntlm from 'httpntlm';
 
 export default class CrmService implements ICrmService
 {
+	public get cachedToken(): string
+	{
+		return this._cachedToken;
+	}
+
 	private onlineConfig: CrmO365ConnectionConfig;
 	private adConfig: CrmAdConnectionConfig;
 
 	private tokenEndPoint: string;
-	private cachedToken: string;
+	private _cachedToken: string;
 
 	private isInitialised: boolean = false;
 
@@ -266,7 +271,7 @@ export default class CrmService implements ICrmService
 								.on('data', (chunk) => responseParts.push(chunk))
 								.on('end', () =>
 								{
-									this.cachedToken = JSON.parse(responseParts.join('')).access_token;
+									this._cachedToken = JSON.parse(responseParts.join('')).access_token;
 									resolve(this.cachedToken);
 									return;
 								});
