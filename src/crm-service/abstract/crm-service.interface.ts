@@ -22,12 +22,13 @@ export default interface ICrmService
 	 *
 	 * @param {httpMethod} method HTTP verb to use.
 	 * @param {string} urlPath The remaining URL path for the request, after excluding the base URL and the URL prefix.
+	 * @param {any} [data] Data object to be serialised, if the request type supports it.
 	 * @param {Map<string, string>} [extraHeaders] Key-value pairs of headers to include in the request. Exclude the 'Content-Type', 'OData', and 'Accept' headers.
 	 * @param {boolean} [isIgnoreSuffix] Ignores the "base URL suffix" in the configuration.
 	 * @returns {Promise<any>} A promise of CRM's response.
 	 * @memberof ICrmService
 	 */
-	request(method: httpMethod, urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
+	request(method: httpMethod, urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
 
 	/**
 	 * Makes a GET request to CRM using the given configuration parameters passed to the constructor.
@@ -44,34 +45,37 @@ export default interface ICrmService
 	 * Makes a POST request to CRM using the given configuration parameters passed to the constructor.
 	 *
 	 * @param {string} urlPath The remaining URL path for the request, after excluding the base URL and the URL prefix.
+	 * @param {any} [data] Data object to be serialised, if the request type supports it.
 	 * @param {Map<string, string>} [extraHeaders] Key-value pairs of headers to include in the request. Exclude the 'Content-Type', 'OData', and 'Accept' headers.
 	 * @param {boolean} [isIgnoreSuffix] Ignores the "base URL suffix" in the configuration.
 	 * @returns {Promise<any>} A promise of CRM's response.
 	 * @memberof ICrmService
 	 */
-	post(urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
+	post(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
 
 	/**
 	 * Makes a PUT request to CRM using the given configuration parameters passed to the constructor.
 	 *
 	 * @param {string} urlPath The remaining URL path for the request, after excluding the base URL and the URL prefix.
+	 * @param {any} [data] Data object to be serialised, if the request type supports it.
 	 * @param {Map<string, string>} [extraHeaders] Key-value pairs of headers to include in the request. Exclude the 'Content-Type', 'OData', and 'Accept' headers.
 	 * @param {boolean} [isIgnoreSuffix] Ignores the "base URL suffix" in the configuration.
 	 * @returns {Promise<any>} A promise of CRM's response.
 	 * @memberof ICrmService
 	 */
-	put(urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
+	put(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
 
 	/**
 	 * Makes a PATCH request to CRM using the given configuration parameters passed to the constructor.
 	 *
 	 * @param {string} urlPath The remaining URL path for the request, after excluding the base URL and the URL prefix.
+	 * @param {any} [data] Data object to be serialised, if the request type supports it.
 	 * @param {Map<string, string>} [extraHeaders] Key-value pairs of headers to include in the request. Exclude the 'Content-Type', 'OData', and 'Accept' headers.
 	 * @param {boolean} [isIgnoreSuffix] Ignores the "base URL suffix" in the configuration.
 	 * @returns {Promise<any>} A promise of CRM's response.
 	 * @memberof ICrmService
 	 */
-	patch(urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
+	patch(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix?: boolean): Promise<any>;
 
 	/**
 	 * Makes a DELETE request to CRM using the given configuration parameters passed to the constructor.

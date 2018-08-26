@@ -1,6 +1,6 @@
 import { CrmConnectionType } from "../../constants/crm-connection-type.enum";
 
-export default abstract class CrmConnectionConfig
+export abstract class CrmConnectionConfig
 {
 	readonly crmConnectionType?: CrmConnectionType;
 

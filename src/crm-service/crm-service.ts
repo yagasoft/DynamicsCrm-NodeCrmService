@@ -1,4 +1,4 @@
-import CrmConnectionConfig from "./models/connection-config/abstract/crm-connection-config.model";
+import { CrmConnectionConfig } from "./models/connection-config/abstract/crm-connection-config.model";
 import { CrmO365ConnectionConfig } from "./models/connection-config/crm-o365-connection-config.model";
 import { CrmAdConnectionConfig } from "./models/connection-config/crm-ad-connection-config.model";
 import { CrmConnectionType } from "./models/constants/crm-connection-type.enum";
@@ -60,9 +60,9 @@ export class CrmService implements ICrmService
 	}
 
 	testConnection = (): Promise<string> =>
-		this.get("/api/data/v8.2/WhoAmI()", null, true).then(r => r.UserId);
+		this.get("/api/data/v8.2/WhoAmI()", null, true).then(r => r.body.UserId);
 
-	request = (method: httpMethod, urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	request = (method: httpMethod, urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
 		new Promise<any>(
 			(resolve, reject) =>
 			{
@@ -85,11 +85,19 @@ export class CrmService implements ICrmService
 					extraHeaders.forEach((value, key) => headers[key] = value);
 				}
 
+				let dataString;
+
+				if (data)
+				{
+					dataString = JSON.stringify(data);
+					headers['Content-Length'] = Buffer.byteLength(dataString);
+				}
+
 				switch (+this.config.crmConnectionType)
 				{
 					case CrmConnectionType.Office365:
 						headers.Authorization = 'Bearer ' + this.cachedToken;
-						https.request(
+						const request = https.request(
 							{
 								host: this.onlineConfig.webApiHost,
 								path: `${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
@@ -108,15 +116,20 @@ export class CrmService implements ICrmService
 
 										try
 										{
-											const parsed = JSON.parse(response);
+											let parsed;
 
-											if (parsed.error)
+											if (response)
+											{
+												parsed = JSON.parse(response);
+											}
+
+											if (parsed && parsed.error)
 											{
 												reject(parsed);
 											}
 											else
 											{
-												resolve(parsed);
+												resolve({ headers: headers, body: parsed });
 											}
 										}
 										catch (error)
@@ -125,7 +138,14 @@ export class CrmService implements ICrmService
 										}
 									});
 							})
-							.on('error', (e) => reject(e)).end();;
+							.on('error', (e) => reject(e));
+						
+						if (dataString)
+						{
+							request.write(dataString);
+						}
+
+						request.end();
 						break;
 
 					case CrmConnectionType.AD:
@@ -136,9 +156,10 @@ export class CrmService implements ICrmService
 								password: this.config.password,
 								workstation: '',
 								domain: this.adConfig.domain,
-								headers
+								headers,
+								json: data
 							},
-							(err, res) =>
+							(err, response) =>
 							{
 								if (err)
 								{
@@ -146,19 +167,22 @@ export class CrmService implements ICrmService
 									return;
 								}
 
-								const response = res.body;
-
 								try
 								{
-									const parsed = JSON.parse(response);
+									let parsed;
 
-									if (parsed.error)
+									if (response.body)
+									{
+										parsed = JSON.parse(response.body);
+									}
+
+									if (parsed && parsed.error)
 									{
 										reject(parsed);
 									}
 									else
 									{
-										resolve(parsed);
+										resolve({ headers: headers, body: parsed });
 									}
 								}
 								catch (error)
@@ -174,19 +198,19 @@ export class CrmService implements ICrmService
 			});
 
 	get = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		this.request("get", urlPath, extraHeaders, isIgnoreSuffix);
+		this.request("get", urlPath, null, extraHeaders, isIgnoreSuffix);
 
-	post = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		this.request("post", urlPath, extraHeaders, isIgnoreSuffix);
+	post = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("post", urlPath, data, extraHeaders, isIgnoreSuffix);
 
-	put = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		this.request("put", urlPath, extraHeaders, isIgnoreSuffix);
+	put = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("put", urlPath, data, extraHeaders, isIgnoreSuffix);
 
-	patch = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		this.request("patch", urlPath, extraHeaders, isIgnoreSuffix);
+	patch = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+		this.request("patch", urlPath, data, extraHeaders, isIgnoreSuffix);
 
 	delete = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		this.request("delete", urlPath, extraHeaders, isIgnoreSuffix);
+		this.request("delete", urlPath, null, extraHeaders, isIgnoreSuffix);
 
 	private authenticateWithAzureAd = (): Promise<string> => this.getAzureAdTokenUrl().then(this.getO365Token);
 

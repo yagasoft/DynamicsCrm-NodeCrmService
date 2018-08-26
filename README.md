@@ -2,13 +2,19 @@
 
 [![Join the chat at https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService](https://badges.gitter.im/yagasoft/DynamicsCrm-NodeCrmService.svg)](https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Version: 1.1.6
+### Version: 1.1.7
 ---
 
 Easily authenticate with Dynamics CRM built-in services from a Node app.
 
 ## Usage
 
+### Imports
+```typescript
+import { CrmService, CrmO365ConnectionConfig, CrmAdConnectionConfig } from "node-dcrm-service";
+```
+
+### Code
 ```typescript
 const parameters =
    {
@@ -32,6 +38,10 @@ onlineCrmService.initialise()
 [Wiki Page](https://github.com/yagasoft/DynamicsCrm-NodeCrmService/wiki/Steps-to-Getting-a-Client-ID)
 
 ## Changes
+
+#### _v1.1.7 (2018-08-26)_
++ Added: 'data' parameter to post, put, and patch
++ Changed: exposed `CrmConnectionConfig` to be used for polymorphism
 
 #### _v1.1.6 (2018-08-26)_
 + Added: example code
