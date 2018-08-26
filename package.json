@@ -46,8 +46,7 @@
 	"peerDependencies": {},
 	"homepage": "https://github.com/yagasoft/DynamicsCrm-NodeCrmService#readme",
 	"dependencies": {
-		"httpntlm": "^1.7.6",
-		"node": "^8.11.3"
+		"httpntlm": "^1.7.6"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.1.4",
