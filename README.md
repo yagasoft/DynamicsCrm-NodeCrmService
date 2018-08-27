@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService](https://badges.gitter.im/yagasoft/DynamicsCrm-NodeCrmService.svg)](https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Version: 1.1.7
+### Version: 2.1.3
 ---
 
 Easily authenticate with Dynamics CRM built-in services from a Node app.
@@ -11,7 +11,7 @@ Easily authenticate with Dynamics CRM built-in services from a Node app.
 
 ### Imports
 ```typescript
-import { CrmService, CrmO365ConnectionConfig, CrmAdConnectionConfig } from "node-dcrm-service";
+import { CrmService, CrmResponse, CrmConnectionConfig, CrmO365ConnectionConfig, CrmAdConnectionConfig } from "node-dcrm-service";
 ```
 
 ### Code
@@ -30,7 +30,7 @@ onlineConfig = new CrmO365ConnectionConfig(parameters);
 onlineCrmService = new CrmService(onlineConfig);
 onlineCrmService.initialise()
    .then(v => onlineCrmService.get("/api/data/v8.2/WhoAmI()")
-      .then(r => console.log(r.UserId)));
+      .then(r => console.log(r.body.UserId)));
 ```
 
 ## Steps to getting a Client ID
@@ -39,7 +39,12 @@ onlineCrmService.initialise()
 
 ## Changes
 
-#### _v1.1.7 (2018-08-26)_
+#### _v2.1.3 (2018-08-27)_
++ Improved: switched to 'request' library to improve response handling
++ Improved: wrapped the response into a new class for type checking
++ Fixed: standardised response/error object
+
+#### _v1.1.8 (2018-08-26)_
 + Added: 'data' parameter to post, put, and patch
 + Changed: exposed `CrmConnectionConfig` to be used for polymorphism
 

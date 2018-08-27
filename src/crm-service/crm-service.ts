@@ -4,7 +4,9 @@ import { CrmAdConnectionConfig } from "./models/connection-config/crm-ad-connect
 import { CrmConnectionType } from "./models/constants/crm-connection-type.enum";
 import ICrmService, { httpMethod } from "./abstract/crm-service.interface";
 import * as https from 'https';
+import * as req from 'request';
 import * as httpntlm from 'httpntlm';
+import { CrmResponse } from "./models/comm/crm-response.model";
 
 export class CrmService implements ICrmService
 {
@@ -62,8 +64,8 @@ export class CrmService implements ICrmService
 	testConnection = (): Promise<string> =>
 		this.get("/api/data/v8.2/WhoAmI()", null, true).then(r => r.body.UserId);
 
-	request = (method: httpMethod, urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
-		new Promise<any>(
+	request = (method: httpMethod, urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
+		new Promise<CrmResponse>(
 			(resolve, reject) =>
 			{
 				if (!this.isInitialised)
@@ -85,67 +87,17 @@ export class CrmService implements ICrmService
 					extraHeaders.forEach((value, key) => headers[key] = value);
 				}
 
-				let dataString;
-
-				if (data)
-				{
-					dataString = JSON.stringify(data);
-					headers['Content-Length'] = Buffer.byteLength(dataString);
-				}
-
 				switch (+this.config.crmConnectionType)
 				{
 					case CrmConnectionType.Office365:
 						headers.Authorization = 'Bearer ' + this.cachedToken;
-						const request = https.request(
+						req[method](`https://${this.onlineConfig.webApiHost}${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
+							<req.CoreOptions>
 							{
-								host: this.onlineConfig.webApiHost,
-								path: `${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
-								method,
-								headers
+								headers,
+								json: data
 							},
-							(response) =>
-							{
-								const responseParts = [];
-								response
-									.setEncoding('utf8')
-									.on('data', (chunk) => responseParts.push(chunk))
-									.on('end', () =>
-									{
-										const response = responseParts.join('');
-
-										try
-										{
-											let parsed;
-
-											if (response)
-											{
-												parsed = JSON.parse(response);
-											}
-
-											if (parsed && parsed.error)
-											{
-												reject(parsed);
-											}
-											else
-											{
-												resolve({ headers: headers, body: parsed });
-											}
-										}
-										catch (error)
-										{
-											reject(response);
-										}
-									});
-							})
-							.on('error', (e) => reject(e));
-						
-						if (dataString)
-						{
-							request.write(dataString);
-						}
-
-						request.end();
+							(error, response) => this.processResponse(resolve, reject, error, response));
 						break;
 
 					case CrmConnectionType.AD:
@@ -159,37 +111,7 @@ export class CrmService implements ICrmService
 								headers,
 								json: data
 							},
-							(err, response) =>
-							{
-								if (err)
-								{
-									reject(err)
-									return;
-								}
-
-								try
-								{
-									let parsed;
-
-									if (response.body)
-									{
-										parsed = JSON.parse(response.body);
-									}
-
-									if (parsed && parsed.error)
-									{
-										reject(parsed);
-									}
-									else
-									{
-										resolve({ headers: headers, body: parsed });
-									}
-								}
-								catch (error)
-								{
-									reject(response);
-								}
-							});
+							(error, response) => this.processResponse(resolve, reject, error, response));
 						break;
 
 					default:
@@ -197,19 +119,19 @@ export class CrmService implements ICrmService
 				}
 			});
 
-	get = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	get = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		this.request("get", urlPath, null, extraHeaders, isIgnoreSuffix);
 
-	post = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	post = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		this.request("post", urlPath, data, extraHeaders, isIgnoreSuffix);
 
-	put = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	put = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		this.request("put", urlPath, data, extraHeaders, isIgnoreSuffix);
 
-	patch = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	patch = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		this.request("patch", urlPath, data, extraHeaders, isIgnoreSuffix);
 
-	delete = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<any> =>
+	delete = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		this.request("delete", urlPath, null, extraHeaders, isIgnoreSuffix);
 
 	private authenticateWithAzureAd = (): Promise<string> => this.getAzureAdTokenUrl().then(this.getO365Token);
@@ -230,26 +152,36 @@ export class CrmService implements ICrmService
 					return;
 				}
 
-				https.request
-					({
-						host: "login.windows.net",
-						path: `/${this.onlineConfig.tenant}/.well-known/openid-configuration`,
-						method: 'GET'
-					},
-					(response) =>
+				req.get(`https://login.windows.net/${this.onlineConfig.tenant}/.well-known/openid-configuration`,
+					(error, response, body) =>
 					{
-						const responseParts = [];
-						response
-							.setEncoding('utf8')
-							.on('data', (chunk) => responseParts.push(chunk))
-							.on('end', () =>
+						if (error)
+						{
+							reject(error)
+							return;
+						}
+
+						try
+						{
+							let parsed;
+
+							if (body)
 							{
-								this.tokenEndPoint = JSON.parse(responseParts.join('')).token_endpoint;
+								this.tokenEndPoint = JSON.parse(body).token_endpoint;
 								resolve(this.tokenEndPoint);
-								return;
-							});
-					})
-					.on('error', (e) => reject(e)).end();
+								return
+							}
+
+							if (parsed && parsed.error)
+							{
+								reject(parsed);
+							}
+						}
+						catch (error)
+						{
+							reject({ headers: response.headers, statusCode: response.statusCode, statusCodeMessage: response.statusMessage, body: response.body });
+						}
+					});
 			});
 
 	private getO365Token = (): Promise<string> =>
@@ -276,33 +208,101 @@ export class CrmService implements ICrmService
 
 				const tokenEndPointClean = this.tokenEndPoint.toLowerCase().replace('https://', '');
 				const reqstring = `client_id=${this.onlineConfig.appId}&client_secret=${encodeURIComponent(this.onlineConfig.clientId)}&resource=${encodeURIComponent(this.config.baseUrl)}&username=${encodeURIComponent(this.config.username)}&password=${encodeURIComponent(this.config.password)}&grant_type=password`;
-				const tokenRequest =
-					https.request(
+
+				req.post(`https://${tokenEndPointClean.split('/')[0]}/${tokenEndPointClean.split('/').slice(1).join('/')}`,
+					<req.CoreOptions>
+					{
+						headers:
 						{
-							host: tokenEndPointClean.split('/')[0],
-							path: `/${tokenEndPointClean.split('/').slice(1).join('/')}`,
-							method: 'POST',
-							headers:
+							'Content-Type': 'application/x-www-form-urlencoded',
+							'Content-Length': Buffer.byteLength(reqstring)
+						},
+						body: reqstring
+					},
+					(error, response, body) =>
+					{
+						if (error)
+						{
+							reject(error)
+							return;
+						}
+
+						try
+						{
+							let parsed;
+
+							if (body)
 							{
-								'Content-Type': 'application/x-www-form-urlencoded',
-								'Content-Length': Buffer.byteLength(reqstring)
+								this._cachedToken = JSON.parse(body).access_token;
+								resolve(this.cachedToken);
+								return
 							}
-						}, (response) =>
+
+							if (parsed && parsed.error)
+							{
+								reject(parsed);
+							}
+						}
+						catch (error)
 						{
-							const responseParts = [];
-							response
-								.setEncoding('utf8')
-								.on('data', (chunk) => responseParts.push(chunk))
-								.on('end', () =>
-								{
-									this._cachedToken = JSON.parse(responseParts.join('')).access_token;
-									resolve(this.cachedToken);
-									return;
-								});
-						})
-						// TODO: standardise errors
-						.on('error', (e) => reject(e));
-				tokenRequest.write(reqstring);
-				tokenRequest.end();
+							reject({ headers: response.headers, statusCode: response.statusCode, statusCodeMessage: response.statusMessage, body: response.body });
+						}
+					});
 			});
+
+	private processResponse = (resolve: (value?: CrmResponse | PromiseLike<CrmResponse>) => void, reject, error, response): void =>
+	{
+		if (error)
+		{
+			reject(
+				<CrmResponse>
+				{
+					headers: response.headers,
+					statusCode: response.statusCode, statusCodeMessage: response.statusMessage || response.statusCodeMessage,
+					text: response.body, body: error
+				})
+			return;
+		}
+
+		try
+		{
+			let parsed;
+
+			if (response.body)
+			{
+				parsed = JSON.parse(response.body);
+			}
+
+			if (parsed && parsed.error)
+			{
+				reject(
+					<CrmResponse>
+					{
+						headers: response.headers,
+						statusCode: response.statusCode, statusCodeMessage: response.statusMessage || response.statusCodeMessage,
+						text: response.body, body: parsed
+					});
+			}
+			else
+			{
+				resolve(
+					<CrmResponse>
+					{
+						headers: response.headers,
+						statusCode: response.statusCode, statusCodeMessage: response.statusMessage || response.statusCodeMessage,
+						text: response.body, body: parsed
+					});
+			}
+		}
+		catch (error)
+		{
+			reject(
+				<CrmResponse>
+				{
+					headers: response.headers,
+					statusCode: response.statusCode, statusCodeMessage: response.statusMessage || response.statusCodeMessage,
+					body: response.body
+				});
+		}
+	}
 }
