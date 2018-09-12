@@ -2,7 +2,7 @@ import { CrmResponse } from "../models/comm/crm-response.model";
 
 export type httpMethod = "get" | "post" | "put" | "patch" | "delete";
 
-export default interface ICrmService
+export interface ICrmService
 {
 	/**
 	 * Initialises connection parameters and tests the connection. This should be run the first thing.

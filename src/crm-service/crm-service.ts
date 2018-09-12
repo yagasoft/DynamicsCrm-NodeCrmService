@@ -2,11 +2,12 @@ import { CrmConnectionConfig } from "./models/connection-config/abstract/crm-con
 import { CrmO365ConnectionConfig } from "./models/connection-config/crm-o365-connection-config.model";
 import { CrmAdConnectionConfig } from "./models/connection-config/crm-ad-connection-config.model";
 import { CrmConnectionType } from "./models/constants/crm-connection-type.enum";
-import ICrmService, { httpMethod } from "./abstract/crm-service.interface";
+import { ICrmService, httpMethod } from "./abstract/crm-service.interface";
 import * as https from 'https';
 import * as req from 'request';
 import * as httpntlm from 'httpntlm';
 import { CrmResponse } from "./models/comm/crm-response.model";
+import { StringHelpers } from "../helpers/string.helpers"
 
 export class CrmService implements ICrmService
 {
@@ -40,29 +41,34 @@ export class CrmService implements ICrmService
 		}
 	}
 
-	initialise(): Promise<string>
+	async initialise(): Promise<string>
 	{
 		if (this.isInitialised)
 		{
-			return this.testConnection();
+			return await this.testConnection();
 		}
 
 		switch (+this.config.crmConnectionType)
 		{
 			case CrmConnectionType.Office365:
-				return this.authenticateWithAzureAd().then(() => this.isInitialised = true).then(this.testConnection);
+				await this.authenticateWithAzureAd();
+				this.isInitialised = true;
+				return await this.testConnection();
 
 			case CrmConnectionType.AD:
 				this.isInitialised = true;
-				return this.testConnection();
+				return await this.testConnection();
 
 			default:
 				throw new Error(`CRM connection '${this.config.crmConnectionType}' is of an unsupported type.`);
 		}
 	}
 
-	testConnection = (): Promise<string> =>
-		this.get("/api/data/v8.2/WhoAmI()", null, true).then(r => r.body.UserId);
+	async testConnection(): Promise<string>
+	{
+		const response = await this.get(`/api/data/v${this.config.apiVersion || "8.2"}/WhoAmI()`, null, true);
+		return response && response.body && response.body.UserId;
+	}
 
 	request = (method: httpMethod, urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
 		new Promise<CrmResponse>(
@@ -91,7 +97,11 @@ export class CrmService implements ICrmService
 				{
 					case CrmConnectionType.Office365:
 						headers.Authorization = 'Bearer ' + this.cachedToken;
-						req[method](`https://${this.onlineConfig.webApiHost}${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
+						const webApiHost = StringHelpers.trimLeft(this.onlineConfig.webApiHost, ["https://"]);
+						req[method](`https://` +
+							`${StringHelpers.trim(webApiHost, ["/"])}` +
+							`/${isIgnoreSuffix ? "" : StringHelpers.trim(this.config.urlPrefix || "", ["/"])}` +
+							`/${StringHelpers.trimLeft(urlPath, ["/"])}`,
 							<req.CoreOptions>
 							{
 								headers,
@@ -103,7 +113,9 @@ export class CrmService implements ICrmService
 					case CrmConnectionType.AD:
 						httpntlm[method](
 							{
-								url: `${this.config.baseUrl}${isIgnoreSuffix ? "" : this.config.urlPrefix || ""}${urlPath}`,
+								url: `${StringHelpers.trimRight(this.config.baseUrl, ["/"])}` +
+									`/${isIgnoreSuffix ? "" : StringHelpers.trim(this.config.urlPrefix || "", ["/"])}` +
+									`/${StringHelpers.trimLeft(urlPath, ["/"])}`,
 								username: this.config.username,
 								password: this.config.password,
 								workstation: '',
@@ -119,22 +131,35 @@ export class CrmService implements ICrmService
 				}
 			});
 
-	get = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
-		this.request("get", urlPath, null, extraHeaders, isIgnoreSuffix);
+	async get(urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse>
+	{
+		return await this.request("get", urlPath, null, extraHeaders, isIgnoreSuffix);
+	}
 
-	post = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
-		this.request("post", urlPath, data, extraHeaders, isIgnoreSuffix);
+	async post(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse>
+	{
+		return await this.request("post", urlPath, data, extraHeaders, isIgnoreSuffix);
+	}
 
-	put = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
-		this.request("put", urlPath, data, extraHeaders, isIgnoreSuffix);
+	async put(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse>
+	{
+		return await this.request("put", urlPath, data, extraHeaders, isIgnoreSuffix);
+	}
 
-	patch = (urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
-		this.request("patch", urlPath, data, extraHeaders, isIgnoreSuffix);
+	async patch(urlPath: string, data?: any, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse>
+	{
+		return await this.request("patch", urlPath, data, extraHeaders, isIgnoreSuffix);
+	}
 
-	delete = (urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse> =>
-		this.request("delete", urlPath, null, extraHeaders, isIgnoreSuffix);
+	async delete(urlPath: string, extraHeaders?: Map<string, string>, isIgnoreSuffix: boolean = false): Promise<CrmResponse>
+	{
+		return await this.request("delete", urlPath, null, extraHeaders, isIgnoreSuffix);
+	}
 
-	private authenticateWithAzureAd = (): Promise<string> => this.getAzureAdTokenUrl().then(this.getO365Token);
+	private async authenticateWithAzureAd(): Promise<string>
+	{
+		return await this.getAzureAdTokenUrl().then(this.getO365Token);
+	}
 
 	private getAzureAdTokenUrl = (): Promise<string> =>
 		new Promise<string>(
@@ -252,22 +277,31 @@ export class CrmService implements ICrmService
 
 	private processResponse = (resolve: (value?: CrmResponse | PromiseLike<CrmResponse>) => void, reject, error, response): void =>
 	{
-		if (error)
+		let parsed;
+
+		if (error || (response && response.statusCode && typeof (response.statusCode) === "number"
+			&& (response.statusCode < 200 || response.statusCode >= 300)))
 		{
+			try 
+			{
+				parsed = JSON.parse(response.body);
+			}
+			catch { }
+
+			response = response || {};
+
 			reject(
 				<CrmResponse>
 				{
 					headers: response.headers,
 					statusCode: response.statusCode, statusCodeMessage: response.statusMessage || response.statusCodeMessage,
-					text: response.body, body: error
+					text: response.body, body: error || parsed
 				})
 			return;
 		}
 
 		try
 		{
-			let parsed;
-
 			if (response.body)
 			{
 				parsed = JSON.parse(response.body);

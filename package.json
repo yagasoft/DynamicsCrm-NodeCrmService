@@ -1,6 +1,6 @@
 {
 	"name": "node-dcrm-service",
-	"version": "2.1.3",
+	"version": "3.1.4",
 	"description": "Easily authenticate with Dynamics CRM built-in services from a Node app.",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
 		"type": "git",
 		"url": "git+https://github.com/yagasoft/DynamicsCrm-NodeCrmService.git"
 	},
-	"author": "Ahmed el-Sawalhy (Yagasoft)",
+	"author": "Ahmed el-Sawalhy (Yagasoft.com)",
 	"contributors": [
 		{
 			"name": "Ahmed el-Sawalhy",

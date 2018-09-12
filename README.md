@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService](https://badges.gitter.im/yagasoft/DynamicsCrm-NodeCrmService.svg)](https://gitter.im/yagasoft/DynamicsCrm-NodeCrmService?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Version: 2.1.3
+### Version: 3.1.4
 ---
 
 Easily authenticate with Dynamics CRM built-in services from a Node app.
@@ -11,7 +11,7 @@ Easily authenticate with Dynamics CRM built-in services from a Node app.
 
 ### Imports
 ```typescript
-import { CrmService, CrmResponse, CrmConnectionConfig, CrmO365ConnectionConfig, CrmAdConnectionConfig } from "node-dcrm-service";
+import { ICrmService, CrmService, CrmResponse, CrmConnectionConfig, CrmO365ConnectionConfig, CrmAdConnectionConfig } from "node-dcrm-service";
 ```
 
 ### Code
@@ -19,8 +19,9 @@ import { CrmService, CrmResponse, CrmConnectionConfig, CrmO365ConnectionConfig, 
 const parameters =
    {
       baseUrl: "https://testorg.crm.dynamics.com",
-      webApiHost: 'testorg.api.crm.dynamics.com',
-      tenant: 'testorg.onmicrosoft.com',
+      webApiHost: "testorg.api.crm.dynamics.com",
+	  tenant: "testorg.onmicrosoft.com",
+	  apiVersion: "8.2",
       username: "testuser@testorg.onmicrosoft.com",
       password: "password",
       appId: "16cd08d5-b6f1-475e-90a3-d40d83e26bbc",
@@ -28,16 +29,28 @@ const parameters =
    }
 onlineConfig = new CrmO365ConnectionConfig(parameters);
 onlineCrmService = new CrmService(onlineConfig);
-onlineCrmService.initialise()
-   .then(v => onlineCrmService.get("/api/data/v8.2/WhoAmI()")
-      .then(r => console.log(r.body.UserId)));
+await onlineCrmService.initialise();
+const whoAmIResponse = await onlineCrmService.get("WhoAmI()");
+console.log(whoAmIResponse.body.UserId)));
 ```
 
-## Steps to getting a Client ID
+## Additional info
+
+### Steps to getting a Client ID
 
 [Wiki Page](https://github.com/yagasoft/DynamicsCrm-NodeCrmService/wiki/Steps-to-Getting-a-Client-ID)
 
+### Article
+The following blog post explains this library in a bit more detail: [link](http://blog.yagasoft.com/2018/09/connect-dynamics-crm-node).
+
 ## Changes
+
+#### _v3.1.4 (2018-09-12)_
++ Added: exposed the `CrmService` interface
++ Added: append `/api/data/v8.2/` URL prefix by default
++ Added: parameterised the Web API service version
++ Improved: internally switched to `async/await` instead of explicit promises
++ Fixed: `undefined` error when request fails
 
 #### _v2.1.3 (2018-08-27)_
 + Improved: switched to 'request' library to improve response handling

@@ -5,7 +5,8 @@ export abstract class CrmConnectionConfig
 	readonly crmConnectionType?: CrmConnectionType;
 
 	baseUrl: string;
-	urlPrefix?: string;
+	apiVersion?: string = "8.2";
+	urlPrefix?: string = `api/data/v${this.apiVersion || "8.2"}`;
 	username: string;
 	password: string;
 
